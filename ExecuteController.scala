@@ -49,6 +49,7 @@ class ExecuteController[T <: Data, U <: Data, V <: Data](xLen: Int, tagWidth: In
 
   val block_size = meshRows*tileRows
 
+//记录进入mesh的请求
   val mesh_tag = new Bundle with TagQueueTag {
     val rob_id = UDValid(UInt(log2Up(reservation_station_entries).W))
     val addr = local_addr_t.cloneType
@@ -182,6 +183,8 @@ class ExecuteController[T <: Data, U <: Data, V <: Data](xLen: Int, tagWidth: In
   val cntl_valid = mesh_cntl_signals_q.io.deq.valid
   val cntl = mesh_cntl_signals_q.io.deq.bits
 
+
+//真实的mesh！！
   // Instantiate the actual mesh
   val mesh = Module(new MeshWithDelays(inputType, spatialArrayOutputType, accType, mesh_tag, dataflow, tree_reduction, tile_latency, mesh_output_delay,
     tileRows, tileColumns, meshRows, meshColumns, shifter_banks, shifter_banks))

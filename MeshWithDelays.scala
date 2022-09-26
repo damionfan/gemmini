@@ -163,6 +163,8 @@ class MeshWithDelays[T <: Data: Arithmetic, U <: TagQueueTag with Data]
   transposer.io.outCol.ready := true.B
   val transposer_out = VecInit(transposer.io.outCol.bits.grouped(tileRows).map(t => VecInit(t)).toSeq)
 
+
+//声明mesh真实部件。 以及配置相关IOs
   // Wire up mesh's IO to this module's IO
   val mesh = Module(new Mesh(inputType, outputType, accType, df, tree_reduction, tile_latency, max_simultaneous_matmuls, output_delay, tileRows, tileColumns, meshRows, meshColumns))
 

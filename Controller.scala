@@ -14,6 +14,7 @@ import freechips.rocketchip.tilelink.TLIdentityNode
 import GemminiISA._
 import Util._
 
+
 class GemminiCmd(rob_entries: Int)(implicit p: Parameters) extends Bundle {
   val cmd = new RoCCCommand
   val rob_id = UDValid(UInt(log2Up(rob_entries).W))
@@ -23,6 +24,7 @@ class GemminiCmd(rob_entries: Int)(implicit p: Parameters) extends Bundle {
 
 
 //The main module
+//被Config模快调用。
 class Gemmini[T <: Data : Arithmetic, U <: Data, V <: Data](val config: GemminiArrayConfig[T, U, V])
                                      (implicit p: Parameters)
   extends LazyRoCC (
@@ -37,6 +39,8 @@ class Gemmini[T <: Data : Arithmetic, U <: Data, V <: Data](val config: GemminiA
   val xLen = p(XLen)
   val spad = LazyModule(new Scratchpad(config))
 
+
+  //这里声明的模块。
   override lazy val module = new GemminiModule(this)
   override val tlNode = if (config.use_dedicated_tl_port) spad.id_node else TLIdentityNode()
   override val atlNode = if (config.use_dedicated_tl_port) TLIdentityNode() else spad.id_node
@@ -44,6 +48,8 @@ class Gemmini[T <: Data : Arithmetic, U <: Data, V <: Data](val config: GemminiA
   val node = if (config.use_dedicated_tl_port) tlNode else atlNode
 }
 
+
+//顶层
 class GemminiModule[T <: Data: Arithmetic, U <: Data, V <: Data]
     (outer: Gemmini[T, U, V])
     extends LazyRoCCModuleImp(outer)

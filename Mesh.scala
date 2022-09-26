@@ -35,6 +35,8 @@ class Mesh[T <: Data : Arithmetic](inputType: T, outputType: T, accType: T,
     val out_last = Output(Vec(meshColumns, Vec(tileColumns, Bool())))
   })
 
+
+//声明Tile 类
   // mesh(r)(c) => Tile at row r, column c
   val mesh: Seq[Seq[Tile[T]]] = Seq.fill(meshRows, meshColumns)(Module(new Tile(inputType, outputType, accType, df, tree_reduction, max_simultaneous_matmuls, tileRows, tileColumns)))
   val meshT = mesh.transpose

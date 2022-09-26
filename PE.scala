@@ -4,6 +4,11 @@ package gemmini
 import chisel3._
 import chisel3.util._
 
+//scala 泛化类型
+//泛化 上界
+// PEControl 的参数类型必须是Data:Arithmetic的子类
+//Reference: https://docs.scala-lang.org/zh-cn/tour/upper-type-bounds.html
+//Function: 对PE的数据传输和传播进行控制。是其控制信号线。
 class PEControl[T <: Data : Arithmetic](accType: T) extends Bundle {
   val dataflow = UInt(1.W) // TODO make this an Enum
   val propagate = UInt(1.W) // Which register should be propagated (and which should be accumulated)?
@@ -27,7 +32,7 @@ class PE[T <: Data](inputType: T, outputType: T, accType: T, df: Dataflow.Value,
     val out_a = Output(inputType)
     val out_b = Output(outputType)
     val out_c = Output(outputType)
-
+// c = a*b +d //
     val in_control = Input(new PEControl(accType))
     val out_control = Output(new PEControl(accType))
 
@@ -42,15 +47,26 @@ class PE[T <: Data](inputType: T, outputType: T, accType: T, df: Dataflow.Value,
 
     val bad_dataflow = Output(Bool())
   })
+//Wait, what is the type of Dataflow.WS ?
+// Reference: https://www.rle.mit.edu/eems/wp-content/uploads/2019/06/Tutorial-on-DNN-05-DNN-Accelerator-Architectures.pdf
+// 权重固定的情况下，输入的类型是 输入的类型。如果是输出固定的情况下是，输出是out type。
+//这里是不是反了？
 
+//如果是WS模式的情况下，数据需要要写入scratchpad memory。
+//因此，c的类型是inputtype,后面会被共享，作为输入使用。
+//为什么是WS模式会共享C呢？
+//是否是因为，在WS模式下，最后的累和操作需要accumulator完成？
   val cType = if (df == Dataflow.WS) inputType else accType
+
+
+// Note that in the weight-stationary mode, an inputType D usually has insufficient bitwidth to accurately represent partial sums. Therefore, in the weight-stationary mode, D is usually just the 0-matrix, while the accType accumulator SRAMs are used to accumulate partial sum outputs of the systolic array instead.
 
   val a  = io.in_a
   val b  = io.in_b
   val d  = io.in_d
   val c1 = Reg(cType)
   val c2 = Reg(cType)
-  val dataflow = io.in_control.dataflow
+  val dataflow = io.in_control.dataflow //和DF的区别是什么？
   val prop  = io.in_control.propagate
   val shift = io.in_control.shift
   val id = io.in_id
@@ -65,6 +81,8 @@ class PE[T <: Data](inputType: T, outputType: T, accType: T, df: Dataflow.Value,
   io.out_last := last
   io.out_valid := valid
 
+// RegEnable(next, enable) update, with enable gate
+// 当input valid，last_s is prop.
   val last_s = RegEnable(prop, valid)
   val flip = last_s =/= prop
   val shift_offset = Mux(flip, shift, 0.U)
